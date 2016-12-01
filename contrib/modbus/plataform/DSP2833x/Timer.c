@@ -82,7 +82,7 @@ Timer construct_Timer(){
 
 	timer.timerEnabled = false;
 	timer.reloadTime = 0;
-
+	// point function pointers to corresponding functions
 	timer.resetTimer = timer_resetTimer;
 	timer.expiredTimer = timer_expiredTimer;
 	timer.setTimerReloadPeriod = timer_setTimerReloadPeriod;

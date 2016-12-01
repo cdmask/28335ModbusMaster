@@ -3,7 +3,7 @@
 
 #include "ModbusSettings.h"
 
-typedef struct ModbusData ModbusData;
+typedef struct ModbusData ModbusData;                      // define ModbusData as a structure datatype
 
 struct ModbusData {
 	Uint16 slaveAddress;
@@ -13,8 +13,8 @@ struct ModbusData {
 	Uint16 size;
 	Uint16 crc;
 
-	void (*clear)(ModbusData *self);
-	Uint16 * (*getTransmitString)(ModbusData *self);
+	void (*clear)(ModbusData *self);                            //what is this?
+	Uint16 * (*getTransmitString)(ModbusData *self);            //function inside structure?
 	Uint16 * (*getTransmitStringWithoutCRC)(ModbusData *self);
 };
 

@@ -5,8 +5,8 @@
 
 // Log tool =============================
 // When called it displays a message at console using Variadic feature
-// To disable it set DEBUG_LOG_ENABLED = 0 at Modbus.h
-#if DEBUG_LOG_ENABLED
+// To disable it set DEBUG_LOG_ENABLED = 0 at ModbusSetting.h
+#if DEBUG_LOG_ENABLED                           //#if check if is true
 	#include "stdio.h"
     #define SMART_DEBUG(fmt, ...) \
 	do { fprintf(stderr, "%s():%d called! " fmt "\n", __FUNCTION__, \

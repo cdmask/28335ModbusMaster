@@ -18,7 +18,7 @@ struct Serial {
 	Uint32 baudrate;
 
 	Uint16 fifoWaitBuffer;
-
+// These are function pointers, which
 	void (*clear)();
 	Uint16 (*rxBufferStatus)();
 	void (*setSerialRxEnabled)(bool status);
@@ -37,6 +37,7 @@ inline void serial_init(Serial *self);
 inline void serial_transmitData(Uint16 * data, Uint16 size);
 inline Uint16 serial_getRxBufferedWord();
 inline bool serial_getRxError();
+//define a function that returns a struct(Serial) type
 Serial construct_Serial();
 
 #endif

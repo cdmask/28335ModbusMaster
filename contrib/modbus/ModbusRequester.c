@@ -3,21 +3,21 @@
 #include "ModbusMaster.h"
 #include "Log.h"
 #include "Crc.h"
-
+//This function sends the message
 int requester_request(ModbusMaster *mb, Uint16 slaveAddress, ModbusFunctionCode functionCode,
 		Uint16 addr, Uint16 totalData) {
-	mb->requester.slaveAddress = slaveAddress;
-	mb->requester.functionCode = functionCode;
-	mb->requester.addr	       = addr;
-	mb->requester.totalData    = totalData;
-	mb->requester.generate(mb);
+	mb->requester.slaveAddress = slaveAddress;//load data to modbus master
+	mb->requester.functionCode = functionCode;//this is the data to send
+	mb->requester.addr	       = addr;        //
+	mb->requester.totalData    = totalData;   //mb here is a pointer, thus ->
+	mb->requester.generate(mb);               //generate the to send data
 
 	// Set the ModbusMaster to the start state
 	mb->state = MB_START;
 
 	// Wait until the MobbusMaster finish all the state flow
 	while(mb->state != MB_END) {
-		mb->loopStates(mb);
+		mb->loopStates(mb); //this matters
 	}
 
 	return 1;
@@ -46,8 +46,12 @@ int requester_forceCoils(ModbusMaster *mb, Uint16 slaveAddress, Uint16 addr, Uin
 int requester_writeHolding(ModbusMaster *mb, Uint16 slaveAddress, Uint16 addr, Uint16 totalData) {
 	return mb->requester.request(mb, slaveAddress, MB_FUNC_WRITE_NREGISTERS, addr, totalData);
 }
-
+//generate the tobe transmited data according the modbus protocol
+//this one is important
 void requester_generate(ModbusMaster *master) {
+	//requester is a member of master, and we need to deal with requester
+	//so we define a requester and load the value from master requester
+	//and nothing is changed in the master,by doing it this way.
 	ModbusRequester requester = master->requester;
 	Uint16 i, sizeWithoutCRC;
 	Uint16 * transmitStringWithoutCRC;
@@ -55,7 +59,9 @@ void requester_generate(ModbusMaster *master) {
 	// Reference to MODBUS Data Map
 	char * dataPtr;
 //	Uint16 sizeOfMap = 0;
-
+// why this?
+// it should be that the master already has the address and the function code
+// requester just copyed the data!
 	master->dataRequest.slaveAddress = requester.slaveAddress;
 	master->dataRequest.functionCode = requester.functionCode;
 
@@ -133,7 +139,7 @@ void requester_generate(ModbusMaster *master) {
 
 	master->requester.isReady = true;
 }
-
+//what is this?
 void requester_save(ModbusMaster *master) {
 	ModbusRequester requester = master->requester;
 
@@ -170,7 +176,7 @@ void requester_save(ModbusMaster *master) {
 		}
 	}
 }
-
+// so this requesthandler is just long for requester
 ModbusRequester construct_ModbusRequestHandler(){
 	ModbusRequester requester;
 
@@ -180,7 +186,7 @@ ModbusRequester construct_ModbusRequestHandler(){
 	requester.totalData = 0;
 
 	requester.isReady = false;
-
+// function pointers point to functions
 	requester.generate   = requester_generate;
 	requester.save       = requester_save;
 	requester.request    = requester_request;
@@ -196,4 +202,3 @@ ModbusRequester construct_ModbusRequestHandler(){
 
 	return requester;
 }
-

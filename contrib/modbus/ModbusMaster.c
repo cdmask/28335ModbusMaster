@@ -8,7 +8,10 @@ ProfilingTool profiling;
 #endif
 
 Uint64 ticks = 0;
-
+// Master has multiple states
+// according to its states, it does different things and when one state
+// is finished, its state is changed, and we check its state and does something
+// else.
 void master_loopStates(ModbusMaster *self){
 	MB_MASTER_DEBUG();
 	switch (self->state) {
@@ -64,7 +67,7 @@ void master_create(ModbusMaster *self){
 
 void master_start(ModbusMaster *self){
 	MB_MASTER_DEBUG();
-	
+
 	self->dataRequest.clear(&self->dataRequest);
 	self->dataResponse.clear(&self->dataResponse);
 
@@ -177,6 +180,11 @@ void master_process (ModbusMaster *self){
 void master_destroy(ModbusMaster *self){
 	MB_MASTER_DEBUG();
 }
+// Notes:
+// object oriented in C
+// In c++ object oriention is supported, but in C it's not so
+// function pointers are used to act like menber functions in C++
+// and in this way, structures in C are basically like class in C++
 
 ModbusMaster construct_ModbusMaster(){
 	ModbusMaster modbusMaster;
@@ -184,6 +192,7 @@ ModbusMaster construct_ModbusMaster(){
 	MB_MASTER_DEBUG();
 
 	modbusMaster.state = MB_CREATE;
+	// These construct functions initialiezd all data menmer and function pointers
 	modbusMaster.dataRequest = construct_ModbusData();
 	modbusMaster.dataResponse = construct_ModbusData();
 	modbusMaster.requester = construct_ModbusRequestHandler();
@@ -207,7 +216,7 @@ ModbusMaster construct_ModbusMaster(){
 #if MB_INPUT_REGISTERS_ENABLED
 	modbusMaster.inputRegisters = construct_ModbusInputRegistersMap();
 #endif
-
+  //to point the function pointers to corresponding functions
 	modbusMaster.loopStates = master_loopStates;
 	modbusMaster.create = master_create;
 	modbusMaster.start = master_start;
