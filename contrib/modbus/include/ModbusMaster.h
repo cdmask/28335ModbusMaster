@@ -59,6 +59,7 @@ inline void master_wait(ModbusMaster *self);
 inline void master_receive(ModbusMaster *self);
 inline void master_process(ModbusMaster *self);
 inline void master_destroy(ModbusMaster *self);
+inline void master_request(ModbusMaster *self);
 ModbusMaster construct_ModbusMaster();
 
 extern ModbusMaster mb;

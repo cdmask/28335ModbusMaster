@@ -21,15 +21,15 @@ void data_clear(ModbusData *self){
 
 	string[stringIndex++] = self->slaveAddress;
 	string[stringIndex++] = self->functionCode;
-	
-	// Loop throught the "general content" part of data frame
+
+	// Loop through the "general content" part of data frame, address, function code and function related data included	for(contentIterator = 0; contentIterator < (self->size - MB_SIZE_COMMON_DATA); contentIterator++)
 	for(contentIterator = 0; contentIterator < (self->size - MB_SIZE_COMMON_DATA); contentIterator++){
 		string[stringIndex++] = (self->content[contentIterator]) & 0x00FF;
 	}
-	
+	// Add the crc data
 	string[stringIndex++] = (self->crc & 0xFF00) >> 8;
 	string[stringIndex++] = self->crc & 0x00FF;
-
+  // Now all the data is ready to transmit!!!
 	MB_DATA_RESPONSE_DEBUG();
 	return string;
 }

@@ -9,7 +9,8 @@ void serial_clear(){
 	static unsigned short i, destroyFifo;
 
 	SERIAL_DEBUG();
-
+  //  if you want to use SCIB
+  // change  SciaRegs into ScibRegs
 	// Reset Serial in case of error
 	if(SciaRegs.SCIRXST.bit.RXERROR == true){
 		SciaRegs.SCICTL1.bit.SWRESET=0;
@@ -47,10 +48,12 @@ void serial_setSerialTxEnabled(bool status){
 
 // Initialize Serial (actually SCIA)
 void serial_init(Serial *self){
-	Uint32 baudrate;
+	Uint32 baudreg;// SCI Baud-Select register value
 
 	// START: GOT FROM InitScia() FUNCTION (TEXAS FILES) ////////////////////////////////////////
 	EALLOW;
+
+// GPIO settings need to be changed, if u use SCIB or SCIC
 
 	/* Enable internal pull-up for the selected pins */
 	// Pull-ups can be enabled or disabled disabled by the user.
@@ -102,11 +105,11 @@ void serial_init(Serial *self){
 
 	// Baud rate settings - Automatic depending on self->baudrate
 //	baudrate = (Uint32) (SysCtrlRegs.LOSPCP.bit.LSPCLK / (self->baudrate*8) - 1);
-	baudrate = (Uint32) (LOW_SPEED_CLOCK / (self->baudrate*8) - 1);
+	baudreg = (Uint32) (LOW_SPEED_CLOCK / (self->baudrate*8) - 1);
 
 	// Configure the High and Low baud rate registers
-	SciaRegs.SCIHBAUD = (baudrate & 0xFF00) >> 8;
-	SciaRegs.SCILBAUD = (baudrate & 0x00FF);
+	SciaRegs.SCIHBAUD = (baudreg & 0xFF00) >> 8;
+	SciaRegs.SCILBAUD = (baudreg & 0x00FF);
 
 	// Enables TX and RX Interrupts
 	SciaRegs.SCICTL2.bit.TXINTENA = 0;

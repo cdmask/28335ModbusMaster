@@ -33,8 +33,10 @@
 #endif
 
 // Device settings (DSP f28335)
-#define CPU_FREQ			150
-#define LOW_SPEED_CLOCK 	37500000
+
+// Change this according to your DSP
+#define CPU_FREQ			100
+#define LOW_SPEED_CLOCK 	25000000
 //#define LOW_SPEED_CLOCK 	15000000
 
 // Serial settings ========================================

@@ -1,6 +1,9 @@
+#include "DSP2833x_Device.h"
 #include "ModbusMaster.h"
 #include "ModbusSettings.h"
 #include "Log.h"
+
+
 
 #if DEBUG_UTILS_PROFILING
 #include "Profiling.h"
@@ -8,10 +11,8 @@ ProfilingTool profiling;
 #endif
 
 Uint64 ticks = 0;
-// Master has multiple states
-// according to its states, it does different things and when one state
-// is finished, its state is changed, and we check its state and does something
-// else.
+Uint64 abcd=0;
+
 void master_loopStates(ModbusMaster *self){
 	MB_MASTER_DEBUG();
 	switch (self->state) {
@@ -64,12 +65,12 @@ void master_create(ModbusMaster *self){
 #endif
 	self->state = MB_START;
 }
-
+//TODO why wait?
 void master_start(ModbusMaster *self){
 	MB_MASTER_DEBUG();
 
-	self->dataRequest.clear(&self->dataRequest);
-	self->dataResponse.clear(&self->dataResponse);
+	self->dataRequest.clear(&self->dataRequest);    //clear data
+	self->dataResponse.clear(&self->dataResponse);  //clear data
 
 	self->serial.clear();
 	self->timeout = false;
@@ -80,7 +81,7 @@ void master_start(ModbusMaster *self){
 
 	self->state = MB_WAIT;
 }
-
+// 3.5
 void master_wait(ModbusMaster *self) {
 	if (self->timer.expiredTimer(&self->timer)) {
 		self->timer.stop();
@@ -89,25 +90,53 @@ void master_wait(ModbusMaster *self) {
 }
 
 void master_request(ModbusMaster *self){
-	Uint16 * transmitString;
 
+	GpioDataRegs.GPASET.bit.GPIO20 = 1; // set 485 chip enable
+
+	Uint16 * transmitString;
 	// Wait until the code signals that the request is ready to transmit
 	while (self->requester.isReady == false ) { }
 	// Reset request ready signal
 	self->requester.isReady = false;
-
-	transmitString = self->dataResponse.getTransmitString(&self->dataRequest);
+//TODO ????why dataResponse not request??
+// What is the difference bet. dataResponse and dataRequest??
+	transmitString = self->dataRequest.getTransmitString(&self->dataRequest);
 #if DEBUG_UTILS_PROFILING
 	profiling.start(&profiling);
 #endif
-	self->serial.transmitData(transmitString, self->dataRequest.size);
+	//Transmit here!!!
+
+//	self->serial.transmitData(transmitString, self->dataRequest.size);
+
+	//send ABCDEFGHIJ and change line
+
+
+	 //Uint16 ptr[10]={0x01,0x0f,0x00,0x00,0x00,0x03,0x01,0x01,0x4e,0x97};
+	 //Uint16 ptr1[10]={0x01,0x0f,0x00,0x00,0x00,0x03,0x01,0x00,0x8F,0x57};
+
+	 self->serial.transmitData(transmitString,self->dataRequest.size);
+
+   /* if(abcd == 0)
+    {
+	self->serial.transmitData(ptr, 10);
+    abcd = 1;
+    }
+    else
+    {
+    	self->serial.transmitData(ptr1, 10);
+
+        abcd = 0;
+    }*/
 
 	MB_MASTER_DEBUG();
 
 	self->state = MB_RECEIVE;
 }
-
+// data transmitted and wait for response
 void master_receive(ModbusMaster *self){
+
+	GpioDataRegs.GPACLEAR.bit.GPIO20 = 1;//set 485 chip receive enable
+
 	self->timer.resetTimer();
 	self->timer.setTimerReloadPeriod(&self->timer, MB_REQ_TIMEOUT);
 	self->timer.start();
@@ -122,15 +151,15 @@ void master_receive(ModbusMaster *self){
 	) { ; }
 
 	// Get basic data from response
-	self->dataResponse.slaveAddress = self->serial.getRxBufferedWord();
+	self->dataResponse.slaveAddress = self->serial.getRxBufferedWord();//8 bit
 	self->dataResponse.functionCode = self->serial.getRxBufferedWord();
-
+    //TODO?
 	// Prepare the buffer size
 	if (self->dataRequest.functionCode == MB_FUNC_READ_HOLDINGREGISTERS) {
 		self->serial.fifoWaitBuffer = MB_SIZE_COMMON_DATA_WITHOUTCRC;
 		self->serial.fifoWaitBuffer += self->dataRequest.content[3] * 2;
-		self->serial.fifoWaitBuffer += 1;
-	}
+		self->serial.fifoWaitBuffer += 1; //the number of incoming bytes itself is received as well
+	}//other function codes?
 	else {
 		self->serial.fifoWaitBuffer = MB_SIZE_RESP_WRITE;
 	}
@@ -155,6 +184,7 @@ void master_receive(ModbusMaster *self){
 #endif
 
 	// Jump to START if there is any problem with the basic info
+	// This means mistakes happened!
 	if (self->dataResponse.slaveAddress != self->dataRequest.slaveAddress ||
 			self->dataResponse.functionCode != self->dataRequest.functionCode ) {
 		self->state = MB_END;
@@ -180,11 +210,6 @@ void master_process (ModbusMaster *self){
 void master_destroy(ModbusMaster *self){
 	MB_MASTER_DEBUG();
 }
-// Notes:
-// object oriented in C
-// In c++ object oriention is supported, but in C it's not so
-// function pointers are used to act like menber functions in C++
-// and in this way, structures in C are basically like class in C++
 
 ModbusMaster construct_ModbusMaster(){
 	ModbusMaster modbusMaster;
@@ -192,18 +217,22 @@ ModbusMaster construct_ModbusMaster(){
 	MB_MASTER_DEBUG();
 
 	modbusMaster.state = MB_CREATE;
-	// These construct functions initialiezd all data menmer and function pointers
+	//checked
 	modbusMaster.dataRequest = construct_ModbusData();
+	//checked													      // this is mainly for pointing function pointers to corresponding functions
 	modbusMaster.dataResponse = construct_ModbusData();
-	modbusMaster.requester = construct_ModbusRequestHandler();
+	//checked link functions														  // of structure types
+	modbusMaster.requester = construct_ModbusRequestHandler();//
+	//checked link functions
 	modbusMaster.serial = construct_Serial();
-	modbusMaster.timer = construct_Timer();
+	//checked
+	modbusMaster.timer = construct_Timer();                   //
 
 	modbusMaster.timeoutCounter = 0;
 	modbusMaster.successfulRequests = 0;
 	modbusMaster.requestReady = false;
 	modbusMaster.requestProcessed = false;
-
+// initialize data
 #if MB_COILS_ENABLED
 	modbusMaster.coils = construct_ModbusCoilsMap();
 #endif
@@ -216,7 +245,7 @@ ModbusMaster construct_ModbusMaster(){
 #if MB_INPUT_REGISTERS_ENABLED
 	modbusMaster.inputRegisters = construct_ModbusInputRegistersMap();
 #endif
-  //to point the function pointers to corresponding functions
+// point function pointers to corresponding functions
 	modbusMaster.loopStates = master_loopStates;
 	modbusMaster.create = master_create;
 	modbusMaster.start = master_start;
